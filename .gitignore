@@ -15,6 +15,8 @@
 
 # next.js
 /.next/
+/.next-phase1-e2e/
+/.next-payload-validation/
 /out/
 
 # production

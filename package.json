@@ -2,18 +2,37 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "translations": "node scripts/translations.mjs",
+    "test:a11y": "playwright test",
+    "test:a11y:isolated": "PHASE1_A11Y=true playwright test --config=playwright.phase1.config.ts",
+    "test:e2e": "playwright test --config=playwright.phase1.config.ts"
   },
   "dependencies": {
+    "@payloadcms/db-mongodb": "^3.90.2",
+    "@payloadcms/next": "^3.90.2",
+    "@payloadcms/richtext-lexical": "^3.90.2",
+    "@payloadcms/storage-s3": "^3.90.2",
+    "graphql": "^16.14.2",
     "next": "16.3.8",
+    "payload": "^3.90.2",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "sharp": "^0.35.5"
+  },
+  "overrides": {
+    "payload": {
+      "undici": "7.29.1"
+    }
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.64.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

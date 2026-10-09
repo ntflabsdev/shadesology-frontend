@@ -1,0 +1,11 @@
+{
+  "common": {
+    "language": "Language",
+    "displayCurrency": "Display currency",
+    "measurements": "Measurements",
+    "imperial": "Imperial (in, ft)",
+    "metric": "Metric (cm, m)",
+    "conversionNotice": "Converted prices are estimates; checkout is charged in USD."
+  },
+  "routes": {}
+}
