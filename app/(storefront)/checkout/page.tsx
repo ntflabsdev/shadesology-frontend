@@ -20,7 +20,7 @@ import {
   type CheckoutQuote,
   type PlaceOrderResult,
 } from "@/lib/cart";
-import { t } from "@/lib/api";
+import { getMe, t } from "@/lib/api";
 import { PaymentCalculator } from "@/components/financing/PaymentCalculator";
 import { trackConversion } from "@/lib/conversion";
 import { useLocaleSettings } from "@/components/i18n/LocaleProvider";
@@ -68,8 +68,10 @@ function CheckoutContent() {
   const [checkoutQuote, setCheckoutQuote] = useState<CheckoutQuote | null>(null);
   const [checkoutError, setCheckoutError] = useState("");
   const [calculatingCheckout, setCalculatingCheckout] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "bank_transfer">("card");
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "bank_transfer" | "purchase_order">("card");
   const [paymentPlan, setPaymentPlan] = useState<"full" | "deposit">("full");
+  const [purchaseOrderNumber, setPurchaseOrderNumber] = useState("");
+  const [purchaseOrderEligible, setPurchaseOrderEligible] = useState(false);
   const financingReference = searchParams.get("financing_ref") || "";
   const placeOrderKey = useRef<string | null>(null);
 
@@ -92,6 +94,35 @@ function CheckoutContent() {
       .then(setCart)
       .catch(() => toast({ title: "Couldn't load cart", variant: "error" }))
       .finally(() => setLoading(false));
+  }, [toast]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function checkDealerTerms() {
+      const user = await getMe();
+      if (user?.role !== "dealer") return;
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"}/api/portals/dealer/profile`, {
+          credentials: "include",
+          cache: "no-store",
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || "Unable to verify dealer payment terms.");
+        if (!cancelled) {
+          setPurchaseOrderEligible(["net15", "net30", "net45", "net60"].includes(result.data?.company?.paymentTerms));
+        }
+      } catch (cause) {
+        if (!cancelled) {
+          setPurchaseOrderEligible(false);
+          toast({
+            title: cause instanceof Error ? cause.message : "Unable to verify dealer payment terms.",
+            variant: "error",
+          });
+        }
+      }
+    }
+    void checkDealerTerms();
+    return () => { cancelled = true; };
   }, [toast]);
 
   // ── Validation ─────────────────────────────────────────────────────────────
@@ -238,6 +269,7 @@ function CheckoutContent() {
         checkoutToken: checkoutQuote.checkoutToken,
         paymentMethod,
         paymentPlan,
+        ...(paymentMethod === "purchase_order" ? { purchaseOrderNumber } : {}),
       }, placeOrderKey.current ?? (placeOrderKey.current = globalThis.crypto.randomUUID()));
 
       if (paymentMethod === "card") {
@@ -285,8 +317,13 @@ function CheckoutContent() {
           </p>
 
           <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800 mb-6 text-left">
-            <strong>Next step:</strong> Use your order reference for the bank transfer. We will confirm payment before production.
-            {orderResult.amountDueNow != null && <p className="mt-2"><strong>Transfer now:</strong> {formatCurrency(orderResult.amountDueNow, "USD", "USD", locale)}</p>}
+            <strong>Next step:</strong> {orderResult.paymentMethod === "purchase_order"
+              ? `Your purchase order ${orderResult.purchaseOrderNumber || ""} is on approved company terms.`
+              : "Use your order reference for the bank transfer. We will confirm payment before production."}
+            {orderResult.paymentMethod === "purchase_order" && orderResult.balanceDue != null && (
+              <p className="mt-2"><strong>Balance due under your terms:</strong> {formatCurrency(orderResult.balanceDue, "USD", "USD", locale)}</p>
+            )}
+            {orderResult.paymentMethod !== "purchase_order" && orderResult.amountDueNow != null && <p className="mt-2"><strong>Transfer now:</strong> {formatCurrency(orderResult.amountDueNow, "USD", "USD", locale)}</p>}
             {orderResult.bankTransferInstructions && (
               <dl className="mt-3 space-y-1">
                 {orderResult.bankTransferInstructions.bankName && <div><dt className="inline font-semibold">Bank: </dt><dd className="inline">{orderResult.bankTransferInstructions.bankName}</dd></div>}
@@ -592,21 +629,27 @@ function CheckoutContent() {
                     <div className="space-y-2 text-sm">
                       <label className="flex items-center gap-2"><input type="radio" name="paymentMethod" checked={paymentMethod === "card"} onChange={() => setPaymentMethod("card")} />Card or wallet (secure Stripe checkout)</label>
                       <label className="flex items-center gap-2"><input type="radio" name="paymentMethod" checked={paymentMethod === "bank_transfer"} onChange={() => setPaymentMethod("bank_transfer")} />Bank transfer</label>
+                      {purchaseOrderEligible && <label className="flex items-center gap-2"><input type="radio" name="paymentMethod" checked={paymentMethod === "purchase_order"} onChange={() => { setPaymentMethod("purchase_order"); setPaymentPlan("full"); }} />Purchase order (approved dealer terms)</label>}
                     </div>
-                    <label className="mt-4 block text-sm">
+                    {paymentMethod === "purchase_order" ? (
+                      <label className="mt-4 block text-sm">
+                        <span className="mb-1 block font-medium">Purchase order reference</span>
+                        <input required minLength={1} maxLength={100} pattern="[A-Za-z0-9][A-Za-z0-9 _./-]{0,99}" value={purchaseOrderNumber} onChange={(event) => setPurchaseOrderNumber(event.target.value)} className="w-full rounded-md border border-[--color-border] bg-white px-3 py-2" />
+                      </label>
+                    ) : <label className="mt-4 block text-sm">
                       <span className="mb-1 block font-medium">Payment amount</span>
                       <select className="w-full rounded-md border border-[--color-border] bg-white px-3 py-2" value={paymentPlan} onChange={(event) => setPaymentPlan(event.target.value as "full" | "deposit")}>
                         <option value="full">Pay in full</option>
                         <option value="deposit">Pay deposit now; balance before dispatch</option>
                       </select>
-                    </label>
+                    </label>}
                   </div>
 
                   <form onSubmit={handlePlaceOrder}>
                     <div className="flex gap-3">
                       <Button type="button" variant="ghost" onClick={() => setStep("shipping")}>← Back</Button>
                       <Button type="submit" fullWidth size="lg" isLoading={submitting} data-conversion-event="primary_cta_click">
-                        {paymentMethod === "card" ? "Continue to secure payment" : "Place bank transfer order"}
+                        {paymentMethod === "card" ? "Continue to secure payment" : paymentMethod === "purchase_order" ? "Place purchase order" : "Place bank transfer order"}
                       </Button>
                     </div>
                   </form>

@@ -55,8 +55,9 @@ export interface PlaceOrderPayload {
   billing?: { firstName?: string; lastName?: string; line1: string; line2?: string; city: string; state: string; zip: string; country?: string };
   sameAsBilling?: boolean;
   checkoutToken: string;
-  paymentMethod: "card" | "bank_transfer";
+  paymentMethod: "card" | "bank_transfer" | "purchase_order";
   paymentPlan: "full" | "deposit";
+  purchaseOrderNumber?: string;
 }
 
 export interface CheckoutQuote {
@@ -84,10 +85,11 @@ export interface CheckoutQuote {
 export interface PlaceOrderResult {
   orderId: string;
   orderNumber: string;
+  purchaseOrderNumber?: string;
   total: number;
   priceChanges: { variantName: string; oldPrice: number; newPrice: number }[];
   checkoutUrl?: string | null;
-  paymentMethod?: "stripe_checkout" | "bank_transfer";
+  paymentMethod?: "stripe_checkout" | "bank_transfer" | "purchase_order";
   paymentStatus?: string;
   amountDueNow?: number;
   balanceDue?: number;

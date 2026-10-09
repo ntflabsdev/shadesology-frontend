@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/Textarea";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Button } from "@/components/ui/Button";
 import { HoneypotField } from "@/components/forms/HoneypotField";
-import { submitLead } from "@/lib/leads";
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
 const BUSINESS_TYPES = [
   { value: "dealer",            label: "Reseller / Dealer" },
@@ -29,7 +30,7 @@ const ANNUAL_VOLUMES = [
 export default function DealerApplyPage() {
   const [form, setForm] = useState({
     businessName: "", contactName: "", email: "", phone: "",
-    businessType: "", website: "", abn: "",
+    businessType: "", website: "", abn: "", city: "", state: "",
     annualVolume: "", productsOfInterest: "", additionalNotes: "",
     faxNumber: "",
   });
@@ -50,6 +51,8 @@ export default function DealerApplyPage() {
     if (!form.contactName.trim())  e.contactName   = "Required";
     if (!/\S+@\S+\.\S+/.test(form.email)) e.email = "Valid email required";
     if (!form.businessType)        e.businessType  = "Required";
+    if (!form.city.trim())         e.city          = "Required";
+    if (!form.state.trim())        e.state         = "Required";
     if (!agreed)                   e.terms         = "You must agree to continue";
     return e;
   }
@@ -63,15 +66,35 @@ export default function DealerApplyPage() {
     setLoading(true);
 
     try {
-      await submitLead("leads", {
-        type: "dealer",
-        name: form.contactName,
-        email: form.email,
-        phone: form.phone,
-        company: form.businessName,
-        source: "dealer_apply_page",
-        data: form,
+      if (form.faxNumber.trim()) {
+        setSubmitted(true);
+        return;
+      }
+      const response = await fetch(`${API}/api/portals/applications`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "dealer",
+          data: {
+            businessName: form.businessName,
+            businessEmail: form.email,
+            phone: form.phone,
+            website: form.website,
+            taxId: form.abn,
+            city: form.city,
+            state: form.state,
+            annualVolume: form.annualVolume,
+            productsOfInterest: form.productsOfInterest,
+            additionalNotes: form.additionalNotes,
+          },
+          documents: [],
+        }),
       });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || "Unable to submit your application.");
+      }
       setSubmitted(true);
     } catch (err: unknown) {
       setServerError(err instanceof Error ? err.message : "Submission failed. Please try again.");
@@ -167,6 +190,10 @@ export default function DealerApplyPage() {
               <div className="grid grid-cols-2 gap-4">
                 <Input label="Website (optional)" type="url" value={form.website} onChange={set("website")} placeholder="https://yourbusiness.com" />
                 <Input label="ABN / Tax ID (optional)" value={form.abn} onChange={set("abn")} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Input label="City" value={form.city} onChange={set("city")} error={errors.city} required autoComplete="address-level2" />
+                <Input label="State" value={form.state} onChange={set("state")} error={errors.state} required autoComplete="address-level1" />
               </div>
             </fieldset>
 
