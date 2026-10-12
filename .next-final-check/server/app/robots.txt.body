@@ -1,0 +1,16 @@
+User-Agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /account/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /quote/status/
+Disallow: /login
+Disallow: /register
+Disallow: /reset-password/
+Disallow: /verify-email/
+Disallow: /dev/
+
+Host: https://shadesology.com
+Sitemap: https://shadesology.com/sitemap.xml

@@ -3,6 +3,7 @@ import { ProductCard } from "@/components/ui/ProductCard";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getRequestLocale } from "@/i18n/server";
+import { getSemanticSearchHighlights, getSemanticSearchSuggestions } from "@/lib/semanticSearch";
 
 export const metadata: Metadata = {
   title: "Search Results",
@@ -18,12 +19,43 @@ export default async function SearchPage({ searchParams }: Props) {
   const locale = await getRequestLocale();
   const query = q?.trim() ?? "";
   const page = pageParam ?? "1";
+  const semanticSuggestions = getSemanticSearchSuggestions(query);
+  const semanticHighlights = getSemanticSearchHighlights(query);
 
   if (!query) {
     return (
-      <div className="container py-20 text-center">
+      <div className="container py-20">
         <h1 className="text-3xl font-bold mb-4">Search Shadesology</h1>
-        <p className="text-[--color-text-muted]">Enter a search term in the search bar above.</p>
+        <p className="text-[--color-text-muted] mb-8">Enter a search term in the search bar above.</p>
+
+        <section className="rounded-3xl border border-[--color-border] bg-[--color-neutral-50] p-6 shadow-[var(--shadow-sm)]">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[--color-brand-primary]">AI search</p>
+              <h2 className="mt-2 text-2xl font-bold text-[--color-text-primary]">Popular intent suggestions</h2>
+            </div>
+            <span className="rounded-full bg-[--color-brand-primary]/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[--color-brand-primary]">
+              semantic match
+            </span>
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {semanticSuggestions.map((item) => (
+              <Link
+                key={item.title}
+                href={item.href}
+                className="rounded-2xl border border-[--color-border] bg-white p-5 transition hover:-translate-y-0.5 hover:border-[--color-brand-primary]"
+              >
+                <p className="text-sm font-semibold text-[--color-text-primary]">{item.title}</p>
+                <p className="mt-2 text-sm text-[--color-text-muted]">{item.subtitle}</p>
+                <div className="mt-4 flex items-center justify-between gap-2">
+                  <span className="text-xs uppercase tracking-[0.08em] text-[--color-brand-primary]">{item.productType}</span>
+                  <span className="text-sm font-semibold text-[--color-text-primary]">{item.matchScore}% fit</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
       </div>
     );
   }
@@ -40,6 +72,45 @@ export default async function SearchPage({ searchParams }: Props) {
       <h1 className="text-3xl font-bold mb-2">
         Search results for &quot;<span className="text-[--color-brand-primary]">{query}</span>&quot;
       </h1>
+
+      <section className="mb-8 rounded-3xl border border-[--color-border] bg-[--color-neutral-50] p-5 shadow-[var(--shadow-sm)]">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[--color-brand-primary]">AI semantic match</p>
+            <h2 className="mt-2 text-xl font-bold text-[--color-text-primary]">Query understanding</h2>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {semanticHighlights.map((item) => (
+              <span key={item} className="rounded-full border border-[--color-border] bg-white px-3 py-1 text-xs font-medium text-[--color-text-muted]">
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {semanticSuggestions.map((item) => (
+            <Link
+              key={item.title}
+              href={item.href}
+              className="rounded-2xl border border-[--color-border] bg-white p-4 transition hover:-translate-y-0.5 hover:border-[--color-brand-primary]"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-[--color-text-primary]">{item.title}</p>
+                <span className="text-xs font-semibold text-[--color-brand-primary]">{item.matchScore}%</span>
+              </div>
+              <p className="mt-2 text-sm text-[--color-text-muted]">{item.subtitle}</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {item.reasons.map((reason) => (
+                  <span key={reason} className="rounded-full bg-[--color-brand-primary]/5 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.08em] text-[--color-brand-primary]">
+                    {reason}
+                  </span>
+                ))}
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
 
       {results ? (
         <>

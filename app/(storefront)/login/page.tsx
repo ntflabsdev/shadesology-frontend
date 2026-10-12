@@ -20,10 +20,22 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      await loginUser(email, password);
-      // Merge any guest cart items into the user's account cart (best-effort)
-      await mergeGuestCart().catch(() => null);
-      router.push("/account");
+      const user = await loginUser(email, password);
+      if (user.role === "staff") {
+        const requestedPath = new URLSearchParams(window.location.search).get("redirect");
+        const destination = requestedPath
+          ? new URL(requestedPath, window.location.origin)
+          : new URL("/admin/orders", window.location.origin);
+        router.push(
+          destination.origin === window.location.origin && destination.pathname.startsWith("/admin/")
+            ? `${destination.pathname}${destination.search}${destination.hash}`
+            : "/admin/orders",
+        );
+      } else {
+        // Merge guest cart items for storefront users only.
+        await mergeGuestCart().catch(() => null);
+        router.push("/account");
+      }
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed. Please try again.");

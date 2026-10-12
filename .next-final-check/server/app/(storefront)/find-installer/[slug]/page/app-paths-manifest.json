@@ -1,0 +1,3 @@
+{
+  "/(storefront)/find-installer/[slug]/page": "app/(storefront)/find-installer/[slug]/page.js"
+}

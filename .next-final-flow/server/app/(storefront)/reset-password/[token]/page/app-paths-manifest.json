@@ -1,0 +1,3 @@
+{
+  "/(storefront)/reset-password/[token]/page": "app/(storefront)/reset-password/[token]/page.js"
+}

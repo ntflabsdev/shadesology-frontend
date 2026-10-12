@@ -1,0 +1,3 @@
+{
+  "/(storefront)/resources/page": "app/(storefront)/resources/page.js"
+}

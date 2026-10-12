@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ProductCard as PC, t } from "@/lib/api";
 import { DisplayPrice } from "@/components/i18n/DisplayPrice";
 import { useLocaleSettings } from "@/components/i18n/LocaleProvider";
+import { isWishlisted, toggleWishlistItem } from "@/lib/advancedEcommerce";
 
 interface Props {
   product: PC;
@@ -21,30 +23,54 @@ export function ProductCard({ product, showCompare, onCompare, isInCompare }: Pr
   const image = product.images?.find((i) => i.type === "photo") ?? product.images?.[0];
   const imgSrc = image?.url || PLACEHOLDER;
   const imgAlt = image ? t(image.alt, locale) || t(product.name, locale) : t(product.name, locale);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setSaved(isWishlisted(product.slug));
+  }, [product.slug]);
+
+  function handleWishlistToggle() {
+    const next = toggleWishlistItem(product.slug, t(product.name, locale));
+    setSaved(next.some((item) => item.slug === product.slug));
+  }
 
   return (
     <article className="group bg-white rounded-xl overflow-hidden shadow-sm border border-[--color-border] hover:shadow-md transition-shadow duration-200">
       {/* Image */}
-      <Link href={`/products/${product.slug}`} className="block aspect-product bg-[--color-neutral-100] overflow-hidden relative" tabIndex={0}>
-        <Image
-          src={imgSrc}
-          alt={imgAlt}
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-300"
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          unoptimized={imgSrc.startsWith("data:")}
-        />
-        {product.isNewArrival && (
-          <span className="absolute top-2 left-2 bg-[--color-brand-accent] text-[--color-neutral-900] text-xs font-bold px-2 py-0.5 rounded-full">
-            New
-          </span>
-        )}
-        {product.isFeatured && (
-          <span className="absolute top-2 right-2 bg-[--color-brand-primary] text-white text-xs font-bold px-2 py-0.5 rounded-full">
-            Featured
-          </span>
-        )}
-      </Link>
+      <div className="relative">
+        <Link href={`/products/${product.slug}`} className="block aspect-product bg-[--color-neutral-100] overflow-hidden relative" tabIndex={0}>
+          <Image
+            src={imgSrc}
+            alt={imgAlt}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            unoptimized={imgSrc.startsWith("data:")}
+          />
+          {product.isNewArrival && (
+            <span className="absolute top-2 left-2 bg-[--color-brand-accent] text-[--color-neutral-900] text-xs font-bold px-2 py-0.5 rounded-full">
+              New
+            </span>
+          )}
+          {product.isFeatured && (
+            <span className="absolute top-2 right-2 bg-[--color-brand-primary] text-white text-xs font-bold px-2 py-0.5 rounded-full">
+              Featured
+            </span>
+          )}
+        </Link>
+        <button
+          type="button"
+          onClick={handleWishlistToggle}
+          aria-label={saved ? `Remove ${t(product.name, locale)} from wishlist` : `Save ${t(product.name, locale)} to wishlist`}
+          className={`absolute right-3 top-3 rounded-full border px-2.5 py-1.5 text-xs font-semibold shadow-sm transition-colors ${
+            saved
+              ? "border-[--color-brand-primary] bg-[--color-brand-primary] text-white"
+              : "border-[--color-border] bg-white/90 text-[--color-text-primary] hover:border-[--color-brand-primary] hover:text-[--color-brand-primary]"
+          }`}
+        >
+          {saved ? "Saved" : "Save"}
+        </button>
+      </div>
 
       {/* Body */}
       <div className="p-4">

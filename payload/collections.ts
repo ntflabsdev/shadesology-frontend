@@ -1,5 +1,6 @@
 import type { CollectionConfig, Field, Where } from "payload";
 import { canUseAdmin, isAdmin, isStaff, publishedOrStaff, staffRoles } from "./access";
+import { backendStaffStrategy } from "./admin/backendStaffStrategy";
 
 const localizedText = (name: string, label?: string): Field => ({
   name,
@@ -59,17 +60,20 @@ export const Users: CollectionConfig = {
     useAsTitle: "email",
     group: "Access",
     defaultColumns: ["email", "role", "updatedAt"],
+    hidden: true,
   },
   auth: {
     tokenExpiration: 60 * 60 * 8,
     cookies: { sameSite: "Lax", secure: process.env.NODE_ENV === "production" },
+    disableLocalStrategy: true,
+    strategies: [{ name: "backend-staff", authenticate: backendStaffStrategy }],
   },
   access: {
     admin: canUseAdmin,
-    create: isAdmin,
-    read: isAdmin,
-    update: isAdmin,
-    delete: isAdmin,
+    create: () => false,
+    read: ({ req }) => (isStaff(req.user) ? { id: { equals: req.user.id } } : false),
+    update: () => false,
+    delete: () => false,
   },
   fields: [
     {

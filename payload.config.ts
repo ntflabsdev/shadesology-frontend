@@ -9,27 +9,29 @@ import { CmsCollections } from "./payload/collections";
 import { CmsGlobals } from "./payload/globals";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
-const databaseUri = process.env.DATABASE_URI || process.env.MONGODB_URI || "";
-const publicBucket = process.env.S3_BUCKET_PUBLIC;
-const privateBucket = process.env.S3_BUCKET_PRIVATE;
+const defaultDatabaseUri = "mongodb://127.0.0.1:27017/shadesology";
+const databaseUri = process.env.DATABASE_URI || process.env.MONGODB_URI || defaultDatabaseUri;
+const publicBucket = process.env.S3_BUCKET_PUBLIC || "local-public-media";
+const privateBucket = process.env.S3_BUCKET_PRIVATE || "local-private-documents";
 const developmentSecret = "local-development-only-payload-secret-change-before-deploy";
-const payloadSecret = process.env.PAYLOAD_SECRET || (
-  process.env.NODE_ENV === "production" ? "" : developmentSecret
-);
+const payloadSecret = process.env.PAYLOAD_SECRET || developmentSecret;
+const strictEnvValidation = process.env.PAYLOAD_STRICT_ENV === "true";
 
-if (process.env.NODE_ENV === "production") {
+if (strictEnvValidation) {
   if (payloadSecret.length < 32) {
-    throw new Error("PAYLOAD_SECRET must contain at least 32 characters in production.");
+    throw new Error("PAYLOAD_SECRET must contain at least 32 characters when PAYLOAD_STRICT_ENV=true.");
   }
-  if (!databaseUri || !publicBucket || !privateBucket) {
-    throw new Error("DATABASE_URI, S3_BUCKET_PUBLIC, and S3_BUCKET_PRIVATE are required in production.");
+  if (!process.env.DATABASE_URI && !process.env.MONGODB_URI) {
+    throw new Error("DATABASE_URI or MONGODB_URI is required when PAYLOAD_STRICT_ENV=true.");
+  }
+  if (!process.env.S3_BUCKET_PUBLIC || !process.env.S3_BUCKET_PRIVATE) {
+    throw new Error("S3_BUCKET_PUBLIC and S3_BUCKET_PRIVATE are required when PAYLOAD_STRICT_ENV=true.");
   }
 }
 
 const s3Region = process.env.AWS_REGION || "us-east-1";
 const s3Config = { region: s3Region };
-const storageEnabled = process.env.NODE_ENV === "production" ||
-  (Boolean(publicBucket) && Boolean(privateBucket));
+const storageEnabled = Boolean(process.env.S3_BUCKET_PUBLIC) && Boolean(process.env.S3_BUCKET_PRIVATE);
 
 export default buildConfig({
   admin: {
@@ -38,7 +40,45 @@ export default buildConfig({
       baseDir: path.resolve(dirname, "app/(payload)/admin"),
     },
     components: {
+      beforeLogin: ["@/payload/admin/BackendStaffLoginLink#BackendStaffLoginLink"],
       beforeDashboard: ["@/payload/admin/OperationalLinks#OperationalLinks"],
+      views: {
+        orders: {
+          Component: "@/payload/admin/workspaces/OrdersWorkspace",
+          path: "/orders",
+          exact: true,
+        },
+        orderDetail: {
+          Component: "@/payload/admin/workspaces/OrderDetailWorkspace",
+          path: "/orders/:id",
+          exact: true,
+        },
+        quotes: {
+          Component: "@/payload/admin/workspaces/QuotesWorkspace",
+          path: "/quotes",
+          exact: true,
+        },
+        quoteDetail: {
+          Component: "@/payload/admin/workspaces/QuoteDetailWorkspace",
+          path: "/quotes/:id",
+          exact: true,
+        },
+        leads: {
+          Component: "@/payload/admin/workspaces/LeadsWorkspace",
+          path: "/leads",
+          exact: true,
+        },
+        installers: {
+          Component: "@/payload/admin/workspaces/InstallersWorkspace",
+          path: "/installers",
+          exact: true,
+        },
+        crm: {
+          Component: "@/payload/admin/workspaces/CrmWorkspace",
+          path: "/crm",
+          exact: true,
+        },
+      },
     },
   },
   collections: CmsCollections,

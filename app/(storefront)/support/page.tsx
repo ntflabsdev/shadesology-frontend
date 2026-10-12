@@ -33,6 +33,24 @@ const SUPPORT_TOPICS = [
     href: "/support/service",
   },
   {
+    icon: "🧰",
+    title: "Maintenance Reminders",
+    description: "Track seasonal maintenance windows, cleaning reminders and service due dates for your shade products.",
+    href: "/support/maintenance",
+  },
+  {
+    icon: "🤖",
+    title: "AI Design Assistant",
+    description: "Ask for product guidance, installation help and catalog-safe recommendations from our AI support flow.",
+    href: "/support/assistant",
+  },
+  {
+    icon: "🤖",
+    title: "AI Quote Builder",
+    description: "Paste project notes or upload a drawing to draft a quote for staff review before sending.",
+    href: "/quote/ai-builder",
+  },
+  {
     icon: "📦",
     title: "Order Support",
     description: "Track your order, request changes or get help with delivery.",

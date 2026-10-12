@@ -1,0 +1,3 @@
+{
+  "/(storefront)/sitemap.xml/route": "app/(storefront)/sitemap.xml/route.js"
+}

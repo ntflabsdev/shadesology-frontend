@@ -13,6 +13,11 @@ function configuredOrigins(...values: (string | undefined)[]) {
     .filter(Boolean);
 }
 
+function isLoopbackOrigin(origin: string) {
+  const hostname = new URL(origin).hostname;
+  return ["localhost", "127.0.0.1", "[::1]"].includes(hostname);
+}
+
 const isProduction = process.env.NODE_ENV === "production";
 const storageOrigins = configuredOrigins(
   process.env.S3_PUBLIC_BASE_URL,
@@ -23,7 +28,7 @@ const storageOrigins = configuredOrigins(
 const apiOrigins = configuredOrigins(
   process.env.NEXT_PUBLIC_API_URL,
   process.env.CSP_CONNECT_SRC,
-).filter((origin) => !isProduction || origin.startsWith("https://"));
+).filter((origin) => !isProduction || origin.startsWith("https://") || isLoopbackOrigin(origin));
 const developmentSources = process.env.NODE_ENV === "development" ? ["'unsafe-eval'", "ws:"] : [];
 const contentSecurityPolicy = [
   "default-src 'self'",

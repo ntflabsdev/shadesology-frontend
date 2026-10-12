@@ -1,0 +1,28 @@
+{
+  "node": {
+    "40370dda990948990e04d5a7231813b88993ad903a": {
+      "workers": {
+        "app/(payload)/admin/[[...segments]]/page": {
+          "moduleId": 746490,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "filename": "app/(payload)/layout.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_0"
+    },
+    "60a9eab5eab2e13d8a76010d165763a5b27e3142d6": {
+      "workers": {
+        "app/(payload)/admin/[[...segments]]/page": {
+          "moduleId": 746490,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "filename": "node_modules/@payloadcms/next/dist/layouts/Root/index.js",
+      "exportedName": "$$RSC_SERVER_ACTION_0"
+    }
+  },
+  "edge": {},
+  "encryptionKey": "KFILsknAc0uOW94HwjCgMsHFM8c5ifnJkubekGXcOY4="
+}

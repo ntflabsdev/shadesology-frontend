@@ -1,0 +1,3 @@
+{
+  "/(storefront)/quote/status/[ref]/page": "app/(storefront)/quote/status/[ref]/page.js"
+}
